@@ -1,0 +1,194 @@
+SanjeeviMachina
+
+1) what are the fileds of crontab ?
+Ans:-  Min Hrs Date  Month  WeekDay  /path/to/Command
+2) How will you rebuild the Initramfs ?
+Ans: dracut -f /boot/initramfs-3.10.0-693.el7.x86_64.img $(uname -r)
+3) How will you recover the root password in RHEL7 ?
+Ans:-Resetting root password by Emergency mode:
+Boot the system, at grub menu, Press e , type rd.break at the end of the line which begins with linux and press ctrl+x
+Now remount /sysroot in rw mode:
+mount –o remount,rw /sysroot
+chroot /sysroot
+echo “test123” |passwd –stdin  root
+touch /.autorelabel
+The autorelabel is required to set correct SElinux contexts automatically in the next reboot as /etc/shadow is being updated with incorrect SElinux context.
+4) How will you recover the GRUB ?
+Boot with RHEL 8 DVD. Choose Troubleshoot option-Rescue a Red Hat Enterprise Linux system->mount the root filesystem on /mnt/sysimage->
+Reinstall grub2: grub2-install /dev/sda
+Recreate grub.cfg usign grub2-mkconfig and finally trigger SELinux relabeling if you are using SELinux.
+touch /.autorelabel. Exit and reboot the server and check now booting and observe /boot contents are back to normal
+5) How will you recover the /etc/fstab file ?
+Ans:-   you need to recreate a one using rescue mode, if you lost /etc/fstab. check uuid for filesystems and introduce stanzas manually in /etc/fstab. Reboot and restore the same if you have backed up else where.
+6) when you creating a file it is throwing the RO (read only error), what is the reason ?
+Ans:- The filesystem is mounted in read only or you may not have write permssion in the directory.
+7) where will be the automated run script files are located after server reboot?
+Ans:-   in RHE 6, we use /etc/rc.local file to specify any scripts to run automaticall each time the server boots
+        in RHEL7 onwards, you can place them in a partcular target by creating service unit for systemd that runs the executable.
+8) How will you Reduce the file system in RHEL 7 ?
+Ans:- You can not reduce xfs filesystem (The default filesystem type in RHEL 7 is xfs)
+9) Difference B/W priority and severity ?
+Ans:-   both are same. In Remedy, we use serverity to refer how urgency to resolve the issue
+10) PORT Numbers od ftp,sftp,telnet,dns,dhcp,smtp, nfs,samba ?
+Ans:-    ftp: 21, sftp: 22, telnet:23, dns: 53/udp, smtp: 25, samba: 139
+11) How will you copy a file from one server to another server by using port number ?
+Ans:-   scp -p portnumber /path/toLocalFile  username@RemovteServerOrIP:/path/toRemoveFile
+12) difference B/W vi and vim
+Ans:- vim is improved version of vi (such font colors etc.). Vi is tradition vi editor. By default, vi is aliased with vim for ordernary users in Redhat linux systems.
+13) How will you revert back updated patch version ?
+Ans:- yum history undo <TransactonNumber>
+You also also consider reverting vmsnapshot.
+14) what is the use of rsync ?
+Ans:-It efficiently copies and sync files to or from a remote system.
+a)Supports copying links, devices, owners, groups and permissions.
+b)It’s faster than scp (Secure Copy) because rsync uses remote-update protocol which allows to transfer just the differences between two sets of files. First time, it copies the whole content of a file or a directory from source to destination but from next time, it copies only the changed blocks and bytes to the destination.
+c)Rsync consumes less bandwidth as it uses compression and decompression method while sending and receiving data both ends
+15) Booting procedure ?
+Ans:-Poweron-->Post->BIOS->MBR->Grub->Kernel->Systemd
+16) Patching procedure ?
+Ans:-
+1. Make sure you have console access for the server, test the access and make sure it is working. For virtual server, you might need to have access for vcenter (if you are using vmware). 
+   It is also best practice to do precautionary reboot to know if the system is rebooting without any issues and hence there are unknown isuses previously with the system.
+2. Take VM Backup using vmsnap(ether by me or VMWARE team). if I am patching physical server, i need to coordinate with backup team  so that they will take all filesystem level backups(in my company they user tsm backup tool).
+   For Virtual machines, we can take a snapshot & revert to it in case required(if any issues observed after patch).
+   For Physical machines, if server is not booting after the patch, try to boot the with old kernel. Even the old kernel is also not booting, then I need to rebuild the server and restore the data from the backup. Userdefined volument group and brough back by simply importing them.
+3. On day of activity, the monitoring disable the alerts, so that we dont get any tickets due to this. I Communicate with monitoring team and ask them(via email or they might have had task in the change to do so.) to not to monitor server during the change window which is part of the change.
+4. Application or DB team to bring App and DB down on server (Application or DB team will take this responsibility). They will have separate task in the change to do this activitiy.
+5. Go for a simple reboot to ensure server doesn’t have any prior errors or issues. (this is also known as precautionary reboot. Some customers don’t agree for this. But this is a best practice).
+6. Update the kernel on the machine. It is preferable to go for --install instead of --update option.
+7. Do a yum update to complete the update.
+8. Reboot the machine.
+9. Once up, confirm the server is updated by uname -a.
+10. Coorinate and confirm with  Application/DB team to start and check if applications are up and running 
+11. In case of issue, kindly rollback using yum history. You might need to create an incident describing the issue. Incase of production server, the incident will have higher severity or  priority.
+12. if all goes well, send the communication email that the change is successfull and close your task in the change.
+17) Bonding options ?
+Ans:-
+balance-rr or 0 
+active-backup or 1: 
+balance-xor or 2
+broadcast or 3
+802.3ad or 4
+balance-tlb or 5
+balance-alb or 6
+18) what is no-root-squash, all-squash ?
+Ans: no_root_squash: By default, aAll requests from the user root are translated or mapped as if they came from the user anonymous (default). This behaviour can be squashed with no_root_squal, so that the requests will have root previlege.
+     all_squash: all users including root, nfs requests re translated or mapped as if they came from the anonymous user.
+19) what is the use of ACL's ?
+Ans:-acls are used to configure fine grained access permission for users, named users, named groups on file and directories.
+20) How will you configure autofs ?
+Ans:- using /etc/auto.master, provide map file either with direct (/-) or indirect(single parent directory associated multiple directories). Restart autofs service to take changes effect.
+21) Bonding procedure ?
+NIC bonding is used mostly in scenarios where you cannot afford to lose connectivity due to ethernet failover issues and also it has many other advantages like to distribute bandwidth, fault tolerance etc
+# less /etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE=eth0
+MASTER=bond0
+USERCTL=no
+SLAVE=yes
+BOOTPROTO=none
+TYPE=Ethernet
+ONBOOT=yes
+# less /etc/sysconfig/network-scripts/ifcfg-eth1
+DEVICE=eth1
+TYPE=Ethernet
+ONBOOT=yes
+BOOTPROTO=none
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+Create a new file inside /etc/sysconfig/network-scripts/ifcfg-bond0 with the parameters as shown below
+# less /etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+IPADDR=192.168.0.100
+GATEWAY=192.168.0.1
+NETMASK=255.255.255.0
+DNS1=8.8.8.8
+BONDING_OPTS="miimon=100 mode=1"
+USERCTL=no
+PEERDNS=yes
+BOOTPROTO=none
+ONBOOT=yes
+miimon specifies (in milliseconds) how often MII(media independent interface) link monitoring occurs. This is useful if high availability is required because MII is used to verify that the NIC is active.
+# ethtool<interface_name> | grep "Link detected:"
+# ethtool eth0 | grep "Link detected:"
+        Link detected: yes
+# ethtool eth1 | grep "Link detected:"
+        Link detected: yes
+So for our demo purpose we will use mode 1 make NIC bonding for Fault Tolerance
+Now time to load the bonding module
+# modprobe bonding
+Restart the network interface to make the changes affect
+# service network restart
+Verify if your configuration has worked properly using below command
+# cat /proc/net/bonding/bond0
+22) samba configuration ?
+Ans:- /etc/samba/smb.conf
+23) what is the sgid and stickbit ?
+Ans:- When sticky bit enabled on directories such as world writable directories, only the owner of file will able to delete or rename the file.
+      When SGID enabled or directories, the group ownership will be inherited from the parent directory.
+24) what is inode and how will you identify the inode ?
+Ans" inode is a data structure containing the important information about the file such as filename, size, owner, permissions, acls, pointers to datablocks etc.,
+25) what happend when mkfs command will enter ?
+Ans:- mkfs command will create filesystem structure on the device. This will cause to erase the previsous filesystem if exists on the device.
+26) difference b/w su and su - ?
+Ans:- if no user mentioned along with su command, it attempts to switch to root user. using - will process all envirnment variables and user's home directory .bash_ scripts.
+27) what is superblock ?
+Ans:-The first block of filesystem is Superblock, and this gives information regarding tunable parameters of filesystem such as number of inodes, number of datablocks, size of datablocks etc.,. It may include information such as volume name to identify the partition.
+28) How will you print inodes in file system ?
+Ans:ls -li /path/toFileORDir
+    or use stat /path/toFileOrDir
+    file system inodes can be printed with df -Ih or tune2fs -l /dev/vg/lvname
+29) what are the datablocks, why you need data block ?
+Ans:datablocks are used to store the actual data. They are usually of size 4KB. Datablocks are the last portion in the filesystem structer.
+30) when the file systen is 100% usage and you cleard the space but still it is showing 100% what is the reason ?
+Ans:-This is because of open files in the filesystem. These open files hold space on the Filesystem to complete there execution, once the write operation is completed you will see the exact size of the filesystem. These kind ofprocess emerge due to poor coding of applications or any resource availability. You can use “lsof <FSNAME>” to get the list of open files, or use fuser /fsname to know processes. You can kill any unwanted process or you may proceed to
+“umount and mount ” the filesystem(make sure you have proper approvals for the same).
+31) where kernel parameters located ?
+Ans: Below are the different files where kernel parameters are located. You can provide simply in /etc/sysctl.conf
+              /run/sysctl.d/*.conf
+              /etc/sysctl.d/*.conf
+              /usr/local/lib/sysctl.d/*.conf
+              /usr/lib/sysctl.d/*.conf
+              /lib/sysctl.d/*.conf
+              /etc/sysctl.conf
+32) how will you extend the file system ?
+Ans:-Use the lvextend command (lvextend -L +100M /dev/<Name of the LVM Partition> , in this example we are extending the size by 100MB.
+    resize2fs /dev/<Name of the LVM Partition>
+    check the size of partition using ‘df -h’ command
+33) How will you check the file system usage ?
+Ans:-    df -h /fsname (or use df -h for all the filesystems)
+34) How will you scan the newly assign disk ? 
+Ans: Run the Command ,  echo ” – – – ” > /sys/class/fc_host/hostX/scan
+35) what is LVM, use's of LVM ?
+Ans:- Logical volume manager, gives flexibility to manage storage space. Feature includes Reliability (robust, LVMD daemon proven as robust since agaes) , availabiltiy(ex: RAIDs, Mirror,), Servicebility, Scalability  (ex:increase, decrease filesystem, thin lvs, pvmove etc.,)
+36) How do we set force passwd change for user's first login ?
+Ans:chage -do username
+37) difference b/w t and T in stickybit ?
+Ans:t means T+x
+    T means there sticky bit without executable permission
+38) difference b/w soft and hard mount, rhel7 and rhel8 ?
+Ans: When NFS server is not available, the NFS client tries sever attempts and exits in case of soft mount, and in case of hard mount, the NFS client tries for the connection infinitely till the NFS server is available. 
+39) how to enable ACLs for /home partition ?
+Ans:- by default, in RHEL 7 and 8, for ext4 and xfs, ACLS are enabled. Previous versions, you need to enable in the options field using /etc/fstab (defaults,acl)
+40) How will you block the IP address ?
+    Ans:- using firewalld - Drop all the packet from a particular source
+          or another way is to implemet tcp wrappers using /etc/hosts.deny file.
+41) How will check the listening ports?
+Ans:- netstat -an | grep -i listen
+42) difference b/w tcp and udp ?
+Ans:- Transmission control protocol, which used packet acknowledge that specify if the packet is reached the destination whcih means connection oridented. 
+      In tcp, packet is retransmitted if no acknowledgement is received.
+      User Datagram protocol, which does not user packet acknowledgement, where as you dont know if the packet reached the destination and hence it is connection less.
+      No packet retransmission, if data is discarded and hence UDP is not reliable. 
+43) what is the use of /etc/resolv.conf file ?
+Ans:it containts search-domain name and name server ip address for name resolution. In RHEL 7 and 8, by default it is managed my NetwrkManger service, and hence this file is upated automatically each time you start NetworkManager Service.
+44) difference b/w who and whoami command ?
+Ans: who command will print all the currently logged in users and whoami will print current logged in user.
+45) how will you configure router? and how will check default route and routing table ?
+Ans:    use rotue add command to configure route. use nmcli con show conName ipv4.gateway to print gateway. User netstat -rn command to print the routing table
+46) how will you check user's bad logins ?
+Ans:authentication failure message can be viewd from /var/log/secure or /var/log/audit/audit.log files
+47) what is pwck,grpck ?
+Ans:userd to check and repair consistency issues found user, password and group related configuration files
+
+
